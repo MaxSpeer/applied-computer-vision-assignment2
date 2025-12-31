@@ -3,14 +3,27 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+torch.cuda.is_available()
+
 class Net(nn.Module):
-    def __init__(self, in_ch, num_positions):
+    def __init__(self, in_ch, num_positions, embedder="normal"):
         super().__init__()
         kernel_size = 3
-        self.conv1 = nn.Conv2d(in_ch, 25, kernel_size, padding=1)
-        self.conv2 = nn.Conv2d(25, 50, kernel_size, padding=1)
-        self.conv3 = nn.Conv2d(50, 100, kernel_size, padding=1)
-        self.pool = nn.MaxPool2d(2)
+
+        # If the embedder should be with strided convolutions, 
+        if embedder == "strided":
+            stride = 2
+            self.pool = lambda x: x # identity, since strided conv reduces size
+        else:
+            stride = 1
+            self.pool = nn.MaxPool2d(2)
+
+        self.conv1 = nn.Conv2d(in_ch, 25, kernel_size, padding=1, stride=stride)
+        self.conv2 = nn.Conv2d(25, 50, kernel_size, padding=1, stride=stride)
+        self.conv3 = nn.Conv2d(50, 100, kernel_size, padding=1, stride=stride)
+
+
         self.fc1 = nn.Linear(100 * 8 * 8, 1000)
         self.fc2 = nn.Linear(1000, 100)
         self.fc3 = nn.Linear(100, num_positions)
@@ -27,10 +40,10 @@ class Net(nn.Module):
     
 
 class LateFusionModel(nn.Module):
-    def __init__(self):
+    def __init__(self, embedder = "normal"):
         super().__init__()
-        self.rgb_net = Net(4, 1).to(device)
-        self.xyz_net = Net(4, 1).to(device)
+        self.rgb_net = Net(4, 1, embedder=embedder).to(device)
+        self.xyz_net = Net(4, 1, embedder=embedder).to(device)
         # TODO: pretrain models and freeze
         #for param in self.rgb_net.parameters():
         #    param.requires_grad = False
