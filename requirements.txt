@@ -1,3 +1,5 @@
 fiftyone
 torch
+torchvision
 kaggle
+open3d
