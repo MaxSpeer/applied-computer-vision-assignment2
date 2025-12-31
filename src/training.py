@@ -184,7 +184,7 @@ def log_predictions_table_binary(model, batch, class_names=("cube","sphere"), n=
     # y is (B,1) float -> (B,)
     y = y.to(device).float().view(-1)
 
-    logits, target = _get_outputs_fusion(model, batch)
+    logits, target = get_outputs_fusion(model, batch)
     logits = logits.view(-1)
     target = target.view(-1).float()
 
@@ -210,7 +210,7 @@ def log_predictions_table_binary(model, batch, class_names=("cube","sphere"), n=
     return table
 
 
-def _get_outputs_fusion(model, batch):
+def get_outputs_fusion(model, batch):
     target = batch[-1].to(device)
     outputs = model(batch[0], batch[1])
 

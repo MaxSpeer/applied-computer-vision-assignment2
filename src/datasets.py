@@ -2,6 +2,8 @@ import torch
 import open3d as o3d
 import numpy as np
 import os
+from torch.utils.data import Dataset, DataLoader
+from PIL import Image, ImageShow
 import fiftyone as fo
 
 class MultimodalDataset(Dataset):

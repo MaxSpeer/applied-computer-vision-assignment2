@@ -1,2 +1,3 @@
 notebooks/data/*
 src/__pycache__/*
+notebooks/wandb/*

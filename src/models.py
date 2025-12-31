@@ -51,20 +51,29 @@ class LateFusionModel(nn.Module):
     
 
 class IntermediateFusionNet(nn.Module):
-    def __init__(self, rgb_ch, xyz_ch, fusion_type="concat"):
+    def __init__(self, rgb_ch, xyz_ch, fusion_type="concat", embedder="normal"):
+
+
+        # If the embedder should be with strided convolutions, 
+        if embedder == "strided":
+            stride = 2
+            self.pool = lambda x: x # identity, since strided conv reduces size
+        else:
+            stride = 1
+            self.pool = nn.MaxPool2d(2)
+
         kernel_size = 3
         num_positions = 1
         super().__init__()
         self.fusion_type = fusion_type
-        self.rgb_conv1 = nn.Conv2d(rgb_ch, 25, kernel_size, padding=1)
-        self.rgb_conv2 = nn.Conv2d(25, 50, kernel_size, padding=1)
-        self.rgb_conv3 = nn.Conv2d(50, 100, kernel_size, padding=1)
+        self.rgb_conv1 = nn.Conv2d(rgb_ch, 25, kernel_size, padding=1, stride=stride)
+        self.rgb_conv2 = nn.Conv2d(25, 50, kernel_size, padding=1, stride=stride)
+        self.rgb_conv3 = nn.Conv2d(50, 100, kernel_size, padding=1, stride=stride)
 
-        self.xyz_conv1 = nn.Conv2d(xyz_ch, 25, kernel_size, padding=1)
-        self.xyz_conv2 = nn.Conv2d(25, 50, kernel_size, padding=1)
-        self.xyz_conv3 = nn.Conv2d(50, 100, kernel_size, padding=1)
+        self.xyz_conv1 = nn.Conv2d(xyz_ch, 25, kernel_size, padding=1, stride=stride)
+        self.xyz_conv2 = nn.Conv2d(25, 50, kernel_size, padding=1, stride=stride)
+        self.xyz_conv3 = nn.Conv2d(50, 100, kernel_size, padding=1, stride=stride)
 
-        self.pool = nn.MaxPool2d(2)
         if fusion_type == "concat":
             self.fc1 = nn.Linear(200 * 8 * 8, 1000)
         else:
