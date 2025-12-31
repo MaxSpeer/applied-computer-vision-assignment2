@@ -4,6 +4,66 @@ import numpy as np
 import os
 import fiftyone as fo
 
+class MultimodalDataset(Dataset):
+    def __init__(self, fo_dataset, split_tag, img_transform):
+        """
+        Args:
+            fo_dataset: grouped FiftyOne dataset
+            split_tag: "train" or "val" (sample tag on RGB samples)
+            transform: torchvision transform for RGB
+        """
+        self.rgb_data = []
+        self.lidar_data = []
+        self.labels = []
+
+        self.labelMap = {
+            "cube": 0,
+            "sphere": 1,
+        }
+
+        self.azimuth_cubes = torch.tensor(fo_dataset.info["azimuth_cubes"], dtype=torch.float32).view(-1)
+        self.zenith_cubes  = torch.tensor(fo_dataset.info["zenith_cubes"], dtype=torch.float32).view(-1)
+        self.azimuth_spheres = torch.tensor(fo_dataset.info["azimuth_spheres"], dtype=torch.float32).view(-1)
+        self.zenith_spheres = torch.tensor(fo_dataset.info["zenith_spheres"], dtype=torch.float32).view(-1)
+
+        rgb_view = (fo_dataset.select_group_slices("rgb").match_tags(split_tag))
+
+        for rgb_sample in rgb_view:
+          # Get paired lidar sample via group
+          lidar_sample = fo_dataset.get_group(rgb_sample.group.id, "lidar")['lidar']
+
+          rgb = Image.open(rgb_sample.filepath)
+          rgb = img_transform(rgb)
+
+          lidar_depth = np.load(lidar_sample.filepath)
+          lidar_depth = torch.from_numpy(lidar_depth).to(torch.float32)
+
+          label = rgb_sample.label.label
+
+          self.rgb_data.append(rgb)
+          self.lidar_data.append(lidar_depth)
+          self.labels.append(torch.tensor(self.labelMap[label], dtype=torch.float32)[None])
+
+
+    def __len__(self):
+        return len(self.rgb_data)
+
+    def __getitem__(self, idx):
+        rgb = self.rgb_data[idx]
+        lidar_depth = self.lidar_data[idx]
+        label = self.labels[idx]
+
+        label_idx = int(label.item())
+        if label_idx == 0:
+            az = self.azimuth_cubes
+            ze = self.zenith_cubes
+        else:
+            az = self.azimuth_spheres
+            ze = self.zenith_spheres
+
+        lidar_xyza = get_torch_xyza(lidar_depth, az, ze)
+
+        return rgb, lidar_xyza, lidar_depth.unsqueeze(0),label
 
 def get_torch_xyza(lidar_depth, azimuth, zenith):
         """
