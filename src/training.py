@@ -212,6 +212,6 @@ def log_predictions_table_binary(model, batch, class_names=("cube","sphere"), n=
 
 def get_outputs_fusion(model, batch):
     target = batch[-1].to(device)
-    outputs = model(batch[0], batch[1])
+    outputs = model(batch[0].to(device), batch[1].to(device))
 
     return outputs, target
