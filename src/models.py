@@ -7,7 +7,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.cuda.is_available()
 
 class Net(nn.Module):
-    def __init__(self, in_ch, num_positions, embedder="normal"):
+    def __init__(self, in_ch, num_positions, embedder="maxPool2D"):
         super().__init__()
         kernel_size = 3
 
@@ -40,7 +40,7 @@ class Net(nn.Module):
     
 
 class LateFusionModel(nn.Module):
-    def __init__(self, embedder = "normal"):
+    def __init__(self, embedder = "maxPool2D"):
         super().__init__()
         self.rgb_net = Net(4, 1, embedder=embedder).to(device)
         self.xyz_net = Net(4, 1, embedder=embedder).to(device)
@@ -64,8 +64,8 @@ class LateFusionModel(nn.Module):
     
 
 class IntermediateFusionNet(nn.Module):
-    def __init__(self, rgb_ch, xyz_ch, fusion_type="concat", embedder="normal"):
-
+    def __init__(self, rgb_ch, xyz_ch, fusion_type="concat", embedder="maxPool2D"):
+        super().__init__()
 
         # If the embedder should be with strided convolutions, 
         if embedder == "strided":
@@ -77,7 +77,6 @@ class IntermediateFusionNet(nn.Module):
 
         kernel_size = 3
         num_positions = 1
-        super().__init__()
         self.fusion_type = fusion_type
         self.rgb_conv1 = nn.Conv2d(rgb_ch, 25, kernel_size, padding=1, stride=stride)
         self.rgb_conv2 = nn.Conv2d(25, 50, kernel_size, padding=1, stride=stride)

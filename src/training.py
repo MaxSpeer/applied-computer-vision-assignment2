@@ -1,3 +1,6 @@
+from random import random
+import os
+import numpy as np
 import torch
 import wandb
 from PIL import Image, ImageShow
@@ -9,11 +12,11 @@ import matplotlib.pyplot as plt
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 torch.cuda.is_available()
 
-def getWandbRun(architecture="CNN Simple Neuer Versuch", dataset="rgb",batch_size=32, epochs=10):
+def getWandbRun(architecture="CNN Simple Neuer Versuch", dataset="rgb",batch_size=32, epochs=10,project_name="clip-extended-assessment"):
 
     run = wandb.init(
         entity="maximilian-speer-hasso-plattner-institut",
-        project="clip-extended-assessment",
+        project=project_name,
         name=f"{architecture}_{dataset}_bs{batch_size}_ep{epochs}",
         config={
             "architecture": architecture,
@@ -215,3 +218,51 @@ def get_outputs_fusion(model, batch):
     outputs = model(batch[0].to(device), batch[1].to(device))
 
     return outputs, target
+
+def set_seeds(seed=51):
+    """
+    Set seeds for complete reproducibility across all libraries and operations.
+
+    Args:
+        seed (int): Random seed value
+    """
+    # Set environment variables before other imports
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+
+    # Python random module
+    random.seed(seed)
+
+    # NumPy
+    np.random.seed(seed)
+
+    # PyTorch CPU
+    torch.manual_seed(seed)
+
+    # PyTorch GPU (all devices)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)  # For multi-GPU setups
+
+        # CUDA deterministic operations
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    # OpenCV
+    cv2.setRNGSeed(seed)
+
+    # Albumentations (for data augmentation)
+    try:
+        A.seed_everything(seed)
+    except AttributeError:
+        # Older versions of albumentations
+        pass
+
+    # PyTorch deterministic algorithms (may impact performance)
+    try:
+        torch.use_deterministic_algorithms(True)
+    except RuntimeError:
+        # Some operations don't have deterministic implementations
+        print("Warning: Some operations may not be deterministic")
+
+    print(f"All random seeds set to {seed} for reproducibility")
