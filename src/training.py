@@ -266,3 +266,60 @@ def set_seeds(seed=51):
         print("Warning: Some operations may not be deterministic")
 
     print(f"All random seeds set to {seed} for reproducibility")
+
+
+def print_CILP_results(epoch, loss, logits_per_img, is_train=True):
+    if is_train:
+        print(f"Epoch {epoch}")
+        print(f"Train Loss: {loss} ")
+    else:
+        print(f"Valid Loss: {loss} ")
+    print("Similarity:")
+    print(logits_per_img)
+
+
+def print_loss(epoch, loss, is_train=True, is_debug=False):
+    loss_type = "Train" if is_train else "Valid"
+    out_string = f"Epoch {epoch:3d} | {loss_type} Loss: {loss:2.4f}"
+    print(out_string)
+
+
+def train_projector_model(model, optimizer, loss_func, epochs, train_dataloader, valid_dataloader, wandbrun=None):
+    for epoch in range(epochs):
+        # ---------------- train ----------------
+        model.train()
+        train_loss = 0.0
+        for step, batch in enumerate(train_dataloader):
+            optimizer.zero_grad(set_to_none=True)
+            loss = loss_func(model, batch)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+
+        train_loss = train_loss / (step + 1)
+        print_loss(epoch, train_loss, is_train=True)
+
+        # ---------------- valid ----------------
+        model.eval()
+        valid_loss = 0.0
+        with torch.no_grad():
+            for step, batch in enumerate(valid_dataloader):
+                loss = loss_func(model, batch)
+                valid_loss += loss.item()
+
+        valid_loss = valid_loss / (step + 1)
+        print_loss(epoch, valid_loss, is_train=False)
+
+        # ---------------- wandb log ----------------
+        if wandbrun is not None:
+            wandbrun.log(
+                {
+                    "epoch": epoch,
+                    "train_loss": train_loss,
+                    "valid_loss": valid_loss,
+                    "learning_rate": optimizer.param_groups[0]["lr"],
+                },
+                step=epoch,
+            )
+
+    return train_loss, valid_loss

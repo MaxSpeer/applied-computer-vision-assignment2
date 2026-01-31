@@ -22,8 +22,8 @@ Each Notebook clones this repository in the first cell.
 
 Weights and Biases Project: https://wandb.ai/maximilian-speer-hasso-plattner-institut/clip-extended-assessment/
 
-- 04_final_assessment.ipynb
-<a target="_blank" href="https://colab.research.google.com/github/MaxSpeer/applied-computer-vision-assignment2/blob/master/notebooks/04_final_assessment.ipynb">
+- 04_final_assesment.ipynb
+<a target="_blank" href="https://colab.research.google.com/github/MaxSpeer/applied-computer-vision-assignment2/blob/master/notebooks/04_final_assesment.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </a>
 Weights and Biases Project: https://wandb.ai/maximilian-speer-hasso-plattner-institut/assessment2_notebook4

@@ -114,3 +114,38 @@ class IntermediateFusionNet(nn.Module):
         x = F.relu(self.fc2(x))
         x = self.fc3(x)
         return x
+    
+class Classifier(nn.Module):
+    def __init__(self, in_ch):
+        super().__init__()
+        kernel_size = 3
+        n_classes = 1
+        self.embedder = nn.Sequential(
+            nn.Conv2d(in_ch, 50, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(50, 100, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(100, 200, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(200, 200, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Flatten()
+        )
+        self.classifier = nn.Sequential(
+            nn.Linear(200 * 4 * 4, 100),
+            nn.ReLU(),
+            nn.Linear(100, n_classes)
+        )
+
+    def get_embs(self, imgs):
+        return self.embedder(imgs)
+    
+    def forward(self, raw_data=None, data_embs=None):
+        assert (raw_data is not None or data_embs is not None), "No images or embeddings given."
+        if raw_data is not None:
+            data_embs = self.get_embs(raw_data)
+        return self.classifier(data_embs)
